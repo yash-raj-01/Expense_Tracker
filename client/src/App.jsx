@@ -3,12 +3,9 @@ import './App.css';
 
 function App() {
   return (
-    <div className="app-container">
-      <header>
-        <h1>Ledger Expense Tracker</h1>
-        <p>Project initialized successfully.</p>
-      </header>
-    </div>
+    <main className="container">
+      <h1 className="title">Ledger — Expense Tracker</h1>
+    </main>
   );
 }
 
