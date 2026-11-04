@@ -1,0 +1,35 @@
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-primary: #0f172a;      /* Dark slate background */
+  --bg-secondary: #1e293b;    /* Card & sidebar background */
+  --bg-hover: #334155;        /* Hover state for buttons/tabs */
+  --accent-color: #38bdf8;    /* Sky blue highlight */
+  --accent-green: #22c55e;    /* Income & positive figures */
+  --accent-red: #ef4444;      /* Expense & delete actions */
+  --text-primary: #f8fafc;    /* High-contrast white text */
+  --text-secondary: #94a3b8;  /* Subtle muted text */
+  --border-color: #334155;    /* Subtle borders */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  user-select: none;          /* Native desktop app feel */
+  overflow: hidden;           /* Prevent browser scroll bounce */
+  height: 100vh;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
