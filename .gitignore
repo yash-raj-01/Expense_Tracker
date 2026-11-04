@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production builds
+dist/
+build/
+*/dist/
+
+# Environment variables
+.env
+.env.*
+*/.env
+
+# SQLite databases & journals
+*.db
+*.db-journal
+server/prisma/*.db
+server/prisma/*.db-journal
+
+# Logs & OS artifacts
+*.log
+.DS_Store
+Thumbs.db
