@@ -1,0 +1,10 @@
+{
+  "name": "ledger-expense-tracker",
+  "private": true,
+  "scripts": {
+    "start": "npm --prefix client start",
+    "dev": "npm --prefix client run dev",
+    "electron": "npm --prefix client run electron"
+  }
+}
+
