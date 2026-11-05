@@ -3,9 +3,9 @@ import React from 'react';
 function Dashboard() {
   // Sample data for summary metrics
   const summary = {
-    balance: '$12,450.00',
-    income: '$4,800.00',
-    expenses: '$1,920.50',
+    balance: 'Rs.12,450.00',
+    income: 'Rs.4,800.00',
+    expenses: 'Rs.1,920.50',
   };
 
   // Sample data for recent transactions
@@ -77,7 +77,7 @@ function Dashboard() {
                   </td>
                   <td className="tx-date">{tx.date}</td>
                   <td className={`tx-amount text-right ${tx.type === 'income' ? 'income' : 'expense'}`}>
-                    {tx.type === 'income' ? `+${tx.amount.toFixed(2)}` : `-$${Math.abs(tx.amount).toFixed(2)}`}
+                    {tx.type === 'income' ? `+Rs ${tx.amount.toFixed(2)}` : `-Rs ${Math.abs(tx.amount).toFixed(2)}`}
                   </td>
                 </tr>
               ))}

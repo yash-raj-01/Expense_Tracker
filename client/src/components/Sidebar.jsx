@@ -68,9 +68,9 @@ function Sidebar({ currentTab, onSelectTab }) {
       </nav>
 
       <div className="sidebar-footer">
-        <div className="user-avatar">YR</div>
+        <div className="user-avatar">P</div>
         <div className="user-info">
-          <p className="user-name">Yash Raj</p>
+          <p className="user-name">Profile</p>
           <p className="user-role">Personal</p>
         </div>
       </div>
