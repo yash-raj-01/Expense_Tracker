@@ -10,7 +10,10 @@ build/
 # Environment variables
 .env
 .env.*
+!.env.example
 */.env
+*/.env.*
+!*/.env.example
 
 # SQLite databases & journals
 *.db
@@ -22,3 +25,4 @@ server/prisma/*.db-journal
 *.log
 .DS_Store
 Thumbs.db
+/generated/prisma
