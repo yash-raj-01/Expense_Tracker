@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const prisma = require('./prismaClient');
+const expenseRoutes = require('./routes/expenseRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -27,6 +28,8 @@ app.get('/api/health', async (req, res) => {
     });
   }
 });
+
+app.use('/api/expenses', expenseRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
