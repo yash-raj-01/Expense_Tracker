@@ -8,20 +8,13 @@ const getExpenses = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-<<<<<<< HEAD
       count: expenses.length,
-=======
->>>>>>> origin/main
       data: expenses,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-<<<<<<< HEAD
       message: 'Failed to fetch expenses',
-=======
-      message: 'Failed to retrieve expenses',
->>>>>>> origin/main
       error: error.message,
     });
   }
@@ -146,8 +139,6 @@ const deleteExpense = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
-=======
 const updateExpense = async (req, res) => {
   try {
     const { id } = req.params;
@@ -253,13 +244,9 @@ const updateExpense = async (req, res) => {
   }
 };
 
->>>>>>> origin/main
 module.exports = {
   getExpenses,
   createExpense,
   deleteExpense,
-<<<<<<< HEAD
-=======
   updateExpense,
->>>>>>> origin/main
 };
