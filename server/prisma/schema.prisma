@@ -9,7 +9,8 @@ datasource db {
 model Expense {
   id        Int      @id @default(autoincrement())
   title     String
-  amount    Float
+  amount    Int
+  type      String   @default("EXPENSE")
   category  String
   date      DateTime @default(now())
   createdAt DateTime @default(now())
