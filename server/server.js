@@ -34,3 +34,5 @@ app.use('/api/expenses', expenseRoutes);
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });
+
+// server codebase
