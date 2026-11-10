@@ -1,5 +1,24 @@
 const prisma = require('../prismaClient');
 
+const getExpenses = async (req, res) => {
+  try {
+    const expenses = await prisma.expense.findMany({
+      orderBy: { date: 'desc' },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: expenses,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve expenses',
+      error: error.message,
+    });
+  }
+};
+
 const createExpense = async (req, res) => {
   try {
     const { title, amount, type, category, date } = req.body;
@@ -122,6 +141,7 @@ const deleteExpense = async (req, res) => {
 };
 
 module.exports = {
+  getExpenses,
   createExpense,
   deleteExpense,
 };
