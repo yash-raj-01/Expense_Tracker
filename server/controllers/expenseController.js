@@ -77,6 +77,7 @@ const createExpense = async (req, res) => {
       data: {
         title: title.trim(),
         amount: amount,
+        type: type || 'EXPENSE',
         category: category.trim(),
         date: parsedDate,
       },
@@ -85,10 +86,7 @@ const createExpense = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: 'Expense created successfully',
-      data: {
-        ...newExpense,
-        type: type || 'EXPENSE',
-      },
+      data: newExpense,
     });
   } catch (error) {
     return res.status(500).json({
