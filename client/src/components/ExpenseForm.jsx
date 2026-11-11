@@ -18,7 +18,7 @@ const initialForm = () => ({
   date: getToday(),
 });
 
-function ExpenseForm() {
+function ExpenseForm({ onCreated }) {
   const [form, setForm] = useState(initialForm);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -51,6 +51,7 @@ function ExpenseForm() {
       });
       setForm(initialForm());
       setFeedback({ type: 'success', message: 'Transaction saved successfully.' });
+      onCreated?.();
     } catch (error) {
       setFeedback({ type: 'error', message: error.message });
     } finally {
