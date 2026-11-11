@@ -2,13 +2,41 @@ const prisma = require('../prismaClient');
 
 const getExpenses = async (req, res) => {
   try {
+    const rawLimit = req.query.limit ?? '50';
+    const rawOffset = req.query.offset ?? '0';
+    const limit = Number(rawLimit);
+    const offset = Number(rawOffset);
+
+    if (!/^\d+$/.test(String(rawLimit)) || !Number.isInteger(limit) || limit < 1 || limit > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Limit must be an integer between 1 and 100',
+      });
+    }
+
+    if (!/^\d+$/.test(String(rawOffset)) || !Number.isSafeInteger(offset)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Offset must be a non-negative integer',
+      });
+    }
+
     const expenses = await prisma.expense.findMany({
-      orderBy: { date: 'desc' },
+      orderBy: [{ date: 'desc' }, { id: 'desc' }],
+      skip: offset,
+      take: limit + 1,
     });
+    const hasMore = expenses.length > limit;
+    if (hasMore) expenses.pop();
 
     return res.status(200).json({
       success: true,
       data: expenses,
+      pagination: {
+        limit,
+        offset,
+        hasMore,
+      },
     });
   } catch (error) {
     return res.status(500).json({
