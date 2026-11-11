@@ -31,6 +31,7 @@ const getExpenses = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      count: expenses.length,
       data: expenses,
       pagination: {
         limit,
@@ -41,7 +42,7 @@ const getExpenses = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: 'Failed to retrieve expenses',
+      message: 'Failed to fetch expenses',
       error: error.message,
     });
   }
@@ -277,4 +278,3 @@ module.exports = {
   deleteExpense,
   updateExpense,
 };
-

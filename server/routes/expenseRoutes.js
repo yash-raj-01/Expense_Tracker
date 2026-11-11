@@ -8,4 +8,3 @@ router.patch('/:id', updateExpense);
 router.delete('/:id', deleteExpense);
 
 module.exports = router;
-
