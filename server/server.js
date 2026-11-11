@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const prisma = require('./prismaClient');
 const expenseRoutes = require('./routes/expenseRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -30,9 +31,14 @@ app.get('/api/health', async (req, res) => {
 });
 
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server listening on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
 
 // server codebase
