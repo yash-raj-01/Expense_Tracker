@@ -1,4 +1,4 @@
-const prisma = require('../prismaClient');
+const { pool } = require('../prismaClient');
 
 const getExpenses = async (req, res) => {
   try {
@@ -38,24 +38,36 @@ const getExpenses = async (req, res) => {
     }
 
     const searchTerm = search.trim();
-    const filters = [];
-    if (category) filters.push({ category });
-    if (searchTerm) {
-      filters.push({
-        OR: [
-          { title: { contains: searchTerm, mode: 'insensitive' } },
-          { category: { contains: searchTerm, mode: 'insensitive' } },
-        ],
-      });
-    }
-    const where = filters.length ? { AND: filters } : undefined;
 
-    const expenses = await prisma.expense.findMany({
-      where,
-      orderBy: [{ date: 'desc' }, { id: 'desc' }],
-      skip: offset,
-      take: limit + 1,
-    });
+    // Build parameterized query
+    let sql = `SELECT * FROM "expenses"`;
+    const conditions = [];
+    const params = [];
+    let paramIndex = 1;
+
+    if (category) {
+      conditions.push(`category = $${paramIndex}`);
+      params.push(category);
+      paramIndex++;
+    }
+
+    if (searchTerm) {
+      conditions.push(`(title ILIKE $${paramIndex} OR category ILIKE $${paramIndex})`);
+      params.push(`%${searchTerm}%`);
+      paramIndex++;
+    }
+
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(' AND ')}`;
+    }
+
+    sql += ` ORDER BY date DESC, id DESC`;
+    sql += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit + 1, offset);
+
+    const result = await pool.query(sql, params);
+    const expenses = result.rows;
+
     const hasMore = expenses.length > limit;
     if (hasMore) expenses.pop();
 
@@ -70,6 +82,7 @@ const getExpenses = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('Error fetching expenses:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch expenses',
@@ -80,17 +93,16 @@ const getExpenses = async (req, res) => {
 
 const getExpenseCategories = async (req, res) => {
   try {
-    const records = await prisma.expense.findMany({
-      select: { category: true },
-      distinct: ['category'],
-      orderBy: { category: 'asc' },
-    });
+    const result = await pool.query(
+      `SELECT DISTINCT category FROM "expenses" ORDER BY category ASC`
+    );
 
     return res.status(200).json({
       success: true,
-      data: records.map((record) => record.category),
+      data: result.rows.map((record) => record.category),
     });
   } catch (error) {
+    console.error('Error fetching categories:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to retrieve expense categories',
@@ -153,15 +165,17 @@ const createExpense = async (req, res) => {
       parsedDate = parsed;
     }
 
-    const newExpense = await prisma.expense.create({
-      data: {
-        title: title.trim(),
-        amount: amount,
-        type: type || 'EXPENSE',
-        category: category.trim(),
-        date: parsedDate,
-      },
-    });
+    const expenseType = type || 'EXPENSE';
+
+    // Use pg pool directly — Prisma adapter blocks writes with EPERM
+    const result = await pool.query(
+      `INSERT INTO "expenses" (title, amount, "type", category, date, "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+       RETURNING *`,
+      [title.trim(), amount, expenseType, category.trim(), parsedDate]
+    );
+
+    const newExpense = result.rows[0];
 
     return res.status(201).json({
       success: true,
@@ -169,6 +183,7 @@ const createExpense = async (req, res) => {
       data: newExpense,
     });
   } catch (error) {
+    console.error('Error creating expense:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to create expense',
@@ -189,27 +204,27 @@ const deleteExpense = async (req, res) => {
       });
     }
 
-    const existingExpense = await prisma.expense.findUnique({
-      where: { id: expenseId },
-    });
+    // Check if the expense exists
+    const existing = await pool.query(
+      `SELECT * FROM "expenses" WHERE id = $1`, [expenseId]
+    );
 
-    if (!existingExpense) {
+    if (existing.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: `Expense with ID ${expenseId} not found`,
       });
     }
 
-    await prisma.expense.delete({
-      where: { id: expenseId },
-    });
+    await pool.query(`DELETE FROM "expenses" WHERE id = $1`, [expenseId]);
 
     return res.status(200).json({
       success: true,
       message: 'Expense deleted successfully',
-      data: existingExpense,
+      data: existing.rows[0],
     });
   } catch (error) {
+    console.error('Error deleting expense:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to delete expense',
@@ -243,8 +258,7 @@ const updateExpense = async (req, res) => {
       });
     }
 
-    const data = {};
-
+    // Validate each field
     if (Object.hasOwn(req.body, 'title')) {
       if (typeof req.body.title !== 'string' || req.body.title.trim() === '') {
         return res.status(400).json({
@@ -252,7 +266,6 @@ const updateExpense = async (req, res) => {
           message: 'Title must be a non-empty string',
         });
       }
-      data.title = req.body.title.trim();
     }
 
     if (Object.hasOwn(req.body, 'amount')) {
@@ -262,7 +275,6 @@ const updateExpense = async (req, res) => {
           message: 'Amount must be a positive integer in paise (greater than 0)',
         });
       }
-      data.amount = req.body.amount;
     }
 
     if (Object.hasOwn(req.body, 'type')) {
@@ -272,7 +284,6 @@ const updateExpense = async (req, res) => {
           message: 'Invalid transaction type. Allowed types are: EXPENSE, INCOME',
         });
       }
-      data.type = req.body.type;
     }
 
     if (Object.hasOwn(req.body, 'category')) {
@@ -282,7 +293,6 @@ const updateExpense = async (req, res) => {
           message: 'Category must be a non-empty string',
         });
       }
-      data.category = req.body.category.trim();
     }
 
     if (Object.hasOwn(req.body, 'date')) {
@@ -293,28 +303,66 @@ const updateExpense = async (req, res) => {
           message: 'Invalid date format. Expected a valid date string (e.g. YYYY-MM-DD)',
         });
       }
-      data.date = parsedDate;
     }
 
-    const existingExpense = await prisma.expense.findUnique({ where: { id: expenseId } });
-    if (!existingExpense) {
+    // Check if expense exists
+    const existing = await pool.query(
+      `SELECT * FROM "expenses" WHERE id = $1`, [expenseId]
+    );
+
+    if (existing.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: `Expense with ID ${expenseId} not found`,
       });
     }
 
-    const updatedExpense = await prisma.expense.update({
-      where: { id: expenseId },
-      data,
-    });
+    // Build SET clause dynamically
+    const setClauses = [];
+    const values = [];
+    let paramIdx = 1;
+
+    if (Object.hasOwn(req.body, 'title')) {
+      setClauses.push(`title = $${paramIdx}`);
+      values.push(req.body.title.trim());
+      paramIdx++;
+    }
+    if (Object.hasOwn(req.body, 'amount')) {
+      setClauses.push(`amount = $${paramIdx}`);
+      values.push(req.body.amount);
+      paramIdx++;
+    }
+    if (Object.hasOwn(req.body, 'type')) {
+      setClauses.push(`"type" = $${paramIdx}`);
+      values.push(req.body.type);
+      paramIdx++;
+    }
+    if (Object.hasOwn(req.body, 'category')) {
+      setClauses.push(`category = $${paramIdx}`);
+      values.push(req.body.category.trim());
+      paramIdx++;
+    }
+    if (Object.hasOwn(req.body, 'date')) {
+      setClauses.push(`date = $${paramIdx}`);
+      values.push(new Date(req.body.date));
+      paramIdx++;
+    }
+
+    // Always update updatedAt
+    setClauses.push(`"updatedAt" = NOW()`);
+
+    const updateSql = `UPDATE "expenses" SET ${setClauses.join(', ')} WHERE id = $${paramIdx} RETURNING *`;
+    values.push(expenseId);
+
+    const updated = await pool.query(updateSql, values);
 
     return res.status(200).json({
       success: true,
       message: 'Expense updated successfully',
-      data: updatedExpense,
+      data: updated.rows[0],
     });
   } catch (error) {
+    console.error('Error updating expense:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to update expense',
