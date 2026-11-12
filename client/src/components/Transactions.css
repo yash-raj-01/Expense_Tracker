@@ -44,12 +44,39 @@
   color: var(--expense-red);
 }
 
+.transactions-action-error {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--expense-red);
+  font-size: 0.85rem;
+}
+
 .transactions-table td.expense {
   color: var(--expense-red);
 }
 
+.transaction-action-cell {
+  text-align: right;
+}
+
+.transaction-delete-button {
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--expense-red);
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.transaction-delete-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 @media (max-width: 700px) {
   .transactions-table {
-    min-width: 680px;
+    min-width: 760px;
   }
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getExpenses } from '../api/expenses';
+import { deleteExpense, getExpenses } from '../api/expenses';
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -11,6 +11,8 @@ function TransactionList({ refreshKey }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [retryKey, setRetryKey] = useState(0);
+  const [deletingId, setDeletingId] = useState(null);
+  const [actionError, setActionError] = useState('');
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -35,6 +37,22 @@ function TransactionList({ refreshKey }) {
     };
   }, [refreshKey, retryKey]);
 
+  const handleDelete = async (transaction) => {
+    const confirmed = window.confirm(`Delete "${transaction.title}" from your transactions?`);
+    if (!confirmed) return;
+
+    setDeletingId(transaction.id);
+    setActionError('');
+    try {
+      await deleteExpense(transaction.id);
+      setTransactions((current) => current.filter((item) => item.id !== transaction.id));
+    } catch (requestError) {
+      setActionError(requestError.message);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <section className="transactions-section saved-transactions-section">
       <div className="section-header">
@@ -53,6 +71,11 @@ function TransactionList({ refreshKey }) {
       </div>
 
       <div className="transactions-card">
+        {actionError && (
+          <p className="transactions-action-error" role="alert">
+            {actionError}
+          </p>
+        )}
         {isLoading ? (
           <p className="transactions-state">Loading transactions…</p>
         ) : error ? (
@@ -71,6 +94,7 @@ function TransactionList({ refreshKey }) {
                   <th>Category</th>
                   <th>Date</th>
                   <th className="text-right">Amount</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -92,6 +116,17 @@ function TransactionList({ refreshKey }) {
                       </td>
                       <td className={`tx-amount text-right ${isIncome ? 'income' : 'expense'}`}>
                         {isIncome ? '+' : '−'}{currencyFormatter.format(transaction.amount / 100)}
+                      </td>
+                      <td className="transaction-action-cell">
+                        <button
+                          className="transaction-delete-button"
+                          type="button"
+                          onClick={() => handleDelete(transaction)}
+                          disabled={deletingId === transaction.id}
+                          aria-label={`Delete ${transaction.title}`}
+                        >
+                          {deletingId === transaction.id ? 'Deleting…' : 'Delete'}
+                        </button>
                       </td>
                     </tr>
                   );
