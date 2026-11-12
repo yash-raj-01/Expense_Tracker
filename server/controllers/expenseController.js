@@ -7,6 +7,7 @@ const getExpenses = async (req, res) => {
     const limit = Number(rawLimit);
     const offset = Number(rawOffset);
     const search = req.query.search ?? '';
+    const category = req.query.category ?? '';
 
     if (!/^\d+$/.test(String(rawLimit)) || !Number.isInteger(limit) || limit < 1 || limit > 100) {
       return res.status(400).json({
@@ -29,15 +30,25 @@ const getExpenses = async (req, res) => {
       });
     }
 
+    if (typeof category !== 'string' || category.length > 60) {
+      return res.status(400).json({
+        success: false,
+        message: 'Category filter must be a string no longer than 60 characters',
+      });
+    }
+
     const searchTerm = search.trim();
-    const where = searchTerm
-      ? {
-          OR: [
-            { title: { contains: searchTerm, mode: 'insensitive' } },
-            { category: { contains: searchTerm, mode: 'insensitive' } },
-          ],
-        }
-      : undefined;
+    const filters = [];
+    if (category) filters.push({ category });
+    if (searchTerm) {
+      filters.push({
+        OR: [
+          { title: { contains: searchTerm, mode: 'insensitive' } },
+          { category: { contains: searchTerm, mode: 'insensitive' } },
+        ],
+      });
+    }
+    const where = filters.length ? { AND: filters } : undefined;
 
     const expenses = await prisma.expense.findMany({
       where,
@@ -62,6 +73,27 @@ const getExpenses = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch expenses',
+      error: error.message,
+    });
+  }
+};
+
+const getExpenseCategories = async (req, res) => {
+  try {
+    const records = await prisma.expense.findMany({
+      select: { category: true },
+      distinct: ['category'],
+      orderBy: { category: 'asc' },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: records.map((record) => record.category),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve expense categories',
       error: error.message,
     });
   }
@@ -293,6 +325,7 @@ const updateExpense = async (req, res) => {
 
 module.exports = {
   getExpenses,
+  getExpenseCategories,
   createExpense,
   deleteExpense,
   updateExpense,

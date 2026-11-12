@@ -32,6 +32,18 @@
   font-size: 0.85rem;
 }
 
+.transaction-category-filter {
+  min-height: 38px;
+  max-width: 180px;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
 .transactions-refresh-button {
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
@@ -174,5 +186,9 @@
   .transaction-search-input {
     width: 100%;
     flex: 1;
+  }
+
+  .transaction-category-filter {
+    max-width: none;
   }
 }

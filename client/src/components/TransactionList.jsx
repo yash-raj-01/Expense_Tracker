@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { deleteExpense, getExpenses, updateExpense } from '../api/expenses';
+import { deleteExpense, getExpenseCategories, getExpenses, updateExpense } from '../api/expenses';
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -13,6 +13,8 @@ function TransactionList({ refreshKey }) {
   const [retryKey, setRetryKey] = useState(0);
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [categories, setCategories] = useState([]);
   const [deletingId, setDeletingId] = useState(null);
   const [actionError, setActionError] = useState('');
   const [editingId, setEditingId] = useState(null);
@@ -27,7 +29,7 @@ function TransactionList({ refreshKey }) {
       setError('');
 
       try {
-        const response = await getExpenses({ limit: 50, offset: 0, search: searchTerm });
+        const response = await getExpenses({ limit: 50, offset: 0, search: searchTerm, category: categoryFilter });
         if (isCurrentRequest) setTransactions(response.data || []);
       } catch (requestError) {
         if (isCurrentRequest) setError(requestError.message);
@@ -40,7 +42,21 @@ function TransactionList({ refreshKey }) {
     return () => {
       isCurrentRequest = false;
     };
-  }, [refreshKey, retryKey, searchTerm]);
+  }, [refreshKey, retryKey, searchTerm, categoryFilter]);
+
+  useEffect(() => {
+    let isCurrentRequest = true;
+    getExpenseCategories()
+      .then((response) => {
+        if (isCurrentRequest) setCategories(response.data || []);
+      })
+      .catch((requestError) => {
+        if (isCurrentRequest) setActionError(requestError.message);
+      });
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [refreshKey, retryKey]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSearchTerm(searchInput.trim()), 250);
@@ -56,6 +72,7 @@ function TransactionList({ refreshKey }) {
     try {
       await deleteExpense(transaction.id);
       setTransactions((current) => current.filter((item) => item.id !== transaction.id));
+      setRetryKey((key) => key + 1);
     } catch (requestError) {
       setActionError(requestError.message);
     } finally {
@@ -130,6 +147,17 @@ function TransactionList({ refreshKey }) {
             aria-label="Search transactions by description or category"
             maxLength={100}
           />
+          <select
+            className="transaction-category-filter"
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+            aria-label="Filter transactions by category"
+          >
+            <option value="">All categories</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
           <button
             className="transactions-refresh-button"
             type="button"
@@ -155,7 +183,9 @@ function TransactionList({ refreshKey }) {
           </div>
         ) : transactions.length === 0 ? (
           <p className="transactions-state">
-            {searchTerm ? 'No transactions match your search.' : 'No transactions yet. Add one using the form above.'}
+            {searchTerm || categoryFilter
+              ? 'No transactions match the selected filters.'
+              : 'No transactions yet. Add one using the form above.'}
           </p>
         ) : (
           <div className="transactions-table-wrap">
