@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { deleteExpense, getExpenses } from '../api/expenses';
+import { deleteExpense, getExpenses, updateExpense } from '../api/expenses';
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -13,6 +13,9 @@ function TransactionList({ refreshKey }) {
   const [retryKey, setRetryKey] = useState(0);
   const [deletingId, setDeletingId] = useState(null);
   const [actionError, setActionError] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -50,6 +53,58 @@ function TransactionList({ refreshKey }) {
       setActionError(requestError.message);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const startEditing = (transaction) => {
+    setEditingId(transaction.id);
+    setEditForm({
+      title: transaction.title,
+      type: transaction.type || 'EXPENSE',
+      category: transaction.category,
+      amount: (transaction.amount / 100).toFixed(2),
+      date: new Date(transaction.date).toISOString().slice(0, 10),
+    });
+    setActionError('');
+  };
+
+  const updateEditField = (event) => {
+    const { name, value } = event.target;
+    setEditForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleEditSubmit = async (event, transactionId) => {
+    event.preventDefault();
+    const amountInRupees = Number(editForm.amount);
+
+    if (!editForm.title.trim() || !editForm.category.trim()) {
+      setActionError('Description and category cannot be empty.');
+      return;
+    }
+    if (!Number.isFinite(amountInRupees) || amountInRupees <= 0 || !/^\d+(\.\d{1,2})?$/.test(editForm.amount)) {
+      setActionError('Enter an amount greater than zero with up to two decimal places.');
+      return;
+    }
+
+    setIsSavingEdit(true);
+    setActionError('');
+    try {
+      const response = await updateExpense(transactionId, {
+        title: editForm.title.trim(),
+        type: editForm.type,
+        category: editForm.category.trim(),
+        amount: Math.round(amountInRupees * 100),
+        date: editForm.date,
+      });
+      setTransactions((current) => current.map((transaction) => (
+        transaction.id === transactionId ? response.data : transaction
+      )));
+      setEditingId(null);
+      setEditForm(null);
+    } catch (requestError) {
+      setActionError(requestError.message);
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -101,7 +156,8 @@ function TransactionList({ refreshKey }) {
                 {transactions.map((transaction) => {
                   const isIncome = transaction.type === 'INCOME';
                   return (
-                    <tr key={transaction.id}>
+                    <React.Fragment key={transaction.id}>
+                    <tr>
                       <td className="tx-title">{transaction.title}</td>
                       <td>
                         <span className="tx-badge">{isIncome ? 'Income' : 'Expense'}</span>
@@ -119,16 +175,64 @@ function TransactionList({ refreshKey }) {
                       </td>
                       <td className="transaction-action-cell">
                         <button
+                          className="transaction-edit-button"
+                          type="button"
+                          onClick={() => startEditing(transaction)}
+                          disabled={deletingId !== null || isSavingEdit}
+                        >
+                          Edit
+                        </button>
+                        <button
                           className="transaction-delete-button"
                           type="button"
                           onClick={() => handleDelete(transaction)}
-                          disabled={deletingId === transaction.id}
+                          disabled={deletingId !== null || isSavingEdit}
                           aria-label={`Delete ${transaction.title}`}
                         >
                           {deletingId === transaction.id ? 'Deleting…' : 'Delete'}
                         </button>
                       </td>
                     </tr>
+                    {editingId === transaction.id && editForm && (
+                      <tr>
+                        <td colSpan="6">
+                          <form className="transaction-edit-form" onSubmit={(event) => handleEditSubmit(event, transaction.id)}>
+                            <label>
+                              Description
+                              <input name="title" value={editForm.title} onChange={updateEditField} maxLength={120} required />
+                            </label>
+                            <label>
+                              Type
+                              <select name="type" value={editForm.type} onChange={updateEditField}>
+                                <option value="EXPENSE">Expense</option>
+                                <option value="INCOME">Income</option>
+                              </select>
+                            </label>
+                            <label>
+                              Category
+                              <input name="category" value={editForm.category} onChange={updateEditField} maxLength={60} required />
+                            </label>
+                            <label>
+                              Amount (₹)
+                              <input name="amount" type="number" min="0.01" step="0.01" value={editForm.amount} onChange={updateEditField} required />
+                            </label>
+                            <label>
+                              Date
+                              <input name="date" type="date" value={editForm.date} onChange={updateEditField} required />
+                            </label>
+                            <div className="transaction-edit-actions">
+                              <button type="submit" className="transaction-edit-save" disabled={isSavingEdit}>
+                                {isSavingEdit ? 'Saving…' : 'Save changes'}
+                              </button>
+                              <button type="button" onClick={() => { setEditingId(null); setEditForm(null); }} disabled={isSavingEdit}>
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
