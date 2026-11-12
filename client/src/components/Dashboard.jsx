@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { getExpenses } from '../api/expenses';
-import { fetchAnalyticsSummary } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { fetchExpenses } from '../services/api';
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
@@ -9,51 +8,42 @@ const currencyFormatter = new Intl.NumberFormat('en-IN', {
 
 function Dashboard() {
   const [transactions, setTransactions] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [monthlySummary, setMonthlySummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [error, setError] = useState(null);
+
+  const loadTransactions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchExpenses();
+      setTransactions(data);
+    } catch (err) {
+      setError(err.message || 'Could not connect to the Ledger server. Check that it is running.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let isCurrentRequest = true;
+    loadTransactions();
+  }, []);
 
-    const loadDashboard = async () => {
-      setLoading(true);
-      setError('');
+  const totalExpensePaise = transactions
+    .filter((tx) => tx.type === 'EXPENSE' || !tx.type)
+    .reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
-      try {
-        const [expensesResponse, allTimeSummary, currentMonthSummary] = await Promise.all([
-          getExpenses({ limit: 5, offset: 0 }),
-          fetchAnalyticsSummary({ timeRange: 'all' }),
-          fetchAnalyticsSummary({ timeRange: 'this-month' }),
-        ]);
+  const totalIncomePaise = transactions
+    .filter((tx) => tx.type === 'INCOME')
+    .reduce((acc, curr) => acc + (curr.amount || 0), 0);
 
-        if (!isCurrentRequest) return;
-        setTransactions(expensesResponse.data || []);
-        setSummary(allTimeSummary);
-        setMonthlySummary(currentMonthSummary);
-      } catch (requestError) {
-        if (isCurrentRequest) setError(requestError.message || 'Could not load your dashboard.');
-      } finally {
-        if (isCurrentRequest) setLoading(false);
-      }
-    };
-
-    loadDashboard();
-    return () => {
-      isCurrentRequest = false;
-    };
-  }, [refreshKey]);
-
-  const netSavings = Number(summary?.netSavingsRupees || 0);
+  const balancePaise = totalIncomePaise - totalExpensePaise;
 
   return (
     <div className="dashboard-view">
       <header className="content-header">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Your latest ledger activity and spending summary.</p>
+          <p className="page-subtitle">Welcome back, Yash. Here is your financial overview.</p>
         </div>
         <div className="header-date">
           {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -62,34 +52,36 @@ function Dashboard() {
 
       {error && (
         <div className="error-banner" role="alert">
-          <span>{error}</span>
-          <button className="retry-btn" onClick={() => setRefreshKey((key) => key + 1)}>Retry</button>
+          <span>⚠️ {error}</span>
+          <button className="retry-btn" type="button" onClick={loadTransactions}>
+            Retry
+          </button>
         </div>
       )}
 
       <section className="cards-grid">
         <div className="metric-card">
-          <span className="card-label">Net Savings</span>
-          <h2 className={`card-value ${netSavings >= 0 ? 'text-income' : 'text-expense'}`}>
-            {loading ? 'Loading…' : currencyFormatter.format(netSavings)}
+          <span className="card-label">Total Balance</span>
+          <h2 className={`card-value ${balancePaise >= 0 ? 'text-income' : 'text-expense'}`}>
+            {loading ? 'Loading…' : currencyFormatter.format(balancePaise / 100)}
           </h2>
-          <span className="card-subtext">Income minus expenses to date</span>
+          <span className="card-subtext">Net savings to date</span>
         </div>
 
         <div className="metric-card">
           <span className="card-label">Monthly Income</span>
           <h2 className="card-value text-income">
-            {loading ? 'Loading…' : currencyFormatter.format(monthlySummary?.totalIncomeRupees || 0)}
+            {loading ? 'Loading…' : currencyFormatter.format(totalIncomePaise / 100)}
           </h2>
-          <span className="card-subtext">{monthlySummary?.currentMonth || 'This month'}</span>
+          <span className="card-subtext">Recorded income</span>
         </div>
 
         <div className="metric-card">
           <span className="card-label">Monthly Expenses</span>
           <h2 className="card-value text-expense">
-            {loading ? 'Loading…' : currencyFormatter.format(monthlySummary?.monthlyExpensesRupees || 0)}
+            {loading ? 'Loading…' : currencyFormatter.format(totalExpensePaise / 100)}
           </h2>
-          <span className="card-subtext">{monthlySummary?.currentMonth || 'This month'}</span>
+          <span className="card-subtext">{transactions.length} total recorded</span>
         </div>
       </section>
 
@@ -99,7 +91,7 @@ function Dashboard() {
           <button
             className="section-link dashboard-refresh-button"
             type="button"
-            onClick={() => setRefreshKey((key) => key + 1)}
+            onClick={loadTransactions}
             disabled={loading}
           >
             {loading ? 'Loading…' : 'Refresh'}
@@ -108,11 +100,11 @@ function Dashboard() {
 
         <div className="transactions-card">
           {loading ? (
-            <div className="loading-state">Loading recent transactions…</div>
+            <div className="loading-state">Loading transactions from database…</div>
           ) : transactions.length === 0 ? (
             <div className="empty-state">
-              <p>No transactions found.</p>
-              <span className="empty-subtext">Transactions you add will appear here.</span>
+              <p>No transactions found in PostgreSQL.</p>
+              <span className="empty-subtext">Transactions you create will appear here.</span>
             </div>
           ) : (
             <div className="dashboard-table-wrap">
@@ -127,20 +119,27 @@ function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map((transaction) => {
-                    const isIncome = transaction.type === 'INCOME';
+                  {transactions.map((tx) => {
+                    const isIncome = tx.type === 'INCOME';
                     return (
-                      <tr key={transaction.id}>
-                        <td className="tx-title">{transaction.title}</td>
-                        <td><span className="tx-badge">{isIncome ? 'Income' : 'Expense'}</span></td>
-                        <td><span className="tx-badge">{transaction.category}</span></td>
+                      <tr key={tx.id}>
+                        <td className="tx-title">{tx.title}</td>
+                        <td>
+                          <span className="tx-badge">{isIncome ? 'Income' : 'Expense'}</span>
+                        </td>
+                        <td>
+                          <span className="tx-badge">{tx.category}</span>
+                        </td>
                         <td className="tx-date">
-                          {new Date(transaction.date).toLocaleDateString('en-IN', {
-                            day: 'numeric', month: 'short', year: 'numeric',
+                          {new Date(tx.date).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
                           })}
                         </td>
                         <td className={`tx-amount text-right ${isIncome ? 'income' : 'expense'}`}>
-                          {isIncome ? '+' : '−'}{currencyFormatter.format(transaction.amount / 100)}
+                          {isIncome ? '+' : '−'}
+                          {currencyFormatter.format(tx.amount / 100)}
                         </td>
                       </tr>
                     );
