@@ -11,6 +11,8 @@ function TransactionList({ refreshKey }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [retryKey, setRetryKey] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [deletingId, setDeletingId] = useState(null);
   const [actionError, setActionError] = useState('');
   const [editingId, setEditingId] = useState(null);
@@ -25,7 +27,7 @@ function TransactionList({ refreshKey }) {
       setError('');
 
       try {
-        const response = await getExpenses({ limit: 50, offset: 0 });
+        const response = await getExpenses({ limit: 50, offset: 0, search: searchTerm });
         if (isCurrentRequest) setTransactions(response.data || []);
       } catch (requestError) {
         if (isCurrentRequest) setError(requestError.message);
@@ -38,7 +40,12 @@ function TransactionList({ refreshKey }) {
     return () => {
       isCurrentRequest = false;
     };
-  }, [refreshKey, retryKey]);
+  }, [refreshKey, retryKey, searchTerm]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearchTerm(searchInput.trim()), 250);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
 
   const handleDelete = async (transaction) => {
     const confirmed = window.confirm(`Delete "${transaction.title}" from your transactions?`);
@@ -89,16 +96,14 @@ function TransactionList({ refreshKey }) {
     setIsSavingEdit(true);
     setActionError('');
     try {
-      const response = await updateExpense(transactionId, {
+      await updateExpense(transactionId, {
         title: editForm.title.trim(),
         type: editForm.type,
         category: editForm.category.trim(),
         amount: Math.round(amountInRupees * 100),
         date: editForm.date,
       });
-      setTransactions((current) => current.map((transaction) => (
-        transaction.id === transactionId ? response.data : transaction
-      )));
+      setRetryKey((key) => key + 1);
       setEditingId(null);
       setEditForm(null);
     } catch (requestError) {
@@ -113,16 +118,27 @@ function TransactionList({ refreshKey }) {
       <div className="section-header">
         <div>
           <h2 className="section-title">Saved transactions</h2>
-          <p className="transactions-list-subtitle">Your latest 50 records</p>
+          <p className="transactions-list-subtitle">Search descriptions and categories</p>
         </div>
-        <button
-          className="transactions-refresh-button"
-          type="button"
-          onClick={() => setRetryKey((key) => key + 1)}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Loading…' : 'Refresh'}
-        </button>
+        <div className="transaction-list-controls">
+          <input
+            className="transaction-search-input"
+            type="search"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Search transactions"
+            aria-label="Search transactions by description or category"
+            maxLength={100}
+          />
+          <button
+            className="transactions-refresh-button"
+            type="button"
+            onClick={() => setRetryKey((key) => key + 1)}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Loading…' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       <div className="transactions-card">
@@ -138,7 +154,9 @@ function TransactionList({ refreshKey }) {
             {error}
           </div>
         ) : transactions.length === 0 ? (
-          <p className="transactions-state">No transactions yet. Add one using the form above.</p>
+          <p className="transactions-state">
+            {searchTerm ? 'No transactions match your search.' : 'No transactions yet. Add one using the form above.'}
+          </p>
         ) : (
           <div className="transactions-table-wrap">
             <table className="transactions-table">

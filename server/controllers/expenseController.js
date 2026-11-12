@@ -6,6 +6,7 @@ const getExpenses = async (req, res) => {
     const rawOffset = req.query.offset ?? '0';
     const limit = Number(rawLimit);
     const offset = Number(rawOffset);
+    const search = req.query.search ?? '';
 
     if (!/^\d+$/.test(String(rawLimit)) || !Number.isInteger(limit) || limit < 1 || limit > 100) {
       return res.status(400).json({
@@ -21,7 +22,25 @@ const getExpenses = async (req, res) => {
       });
     }
 
+    if (typeof search !== 'string' || search.trim().length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Search must be a string no longer than 100 characters',
+      });
+    }
+
+    const searchTerm = search.trim();
+    const where = searchTerm
+      ? {
+          OR: [
+            { title: { contains: searchTerm, mode: 'insensitive' } },
+            { category: { contains: searchTerm, mode: 'insensitive' } },
+          ],
+        }
+      : undefined;
+
     const expenses = await prisma.expense.findMany({
+      where,
       orderBy: [{ date: 'desc' }, { id: 'desc' }],
       skip: offset,
       take: limit + 1,

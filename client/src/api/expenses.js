@@ -29,8 +29,9 @@ async function request(path, options = {}) {
   return payload;
 }
 
-export function getExpenses({ limit = 50, offset = 0 } = {}) {
+export function getExpenses({ limit = 50, offset = 0, search = '' } = {}) {
   const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (search.trim()) query.set('search', search.trim());
   return request(`/expenses?${query}`);
 }
 

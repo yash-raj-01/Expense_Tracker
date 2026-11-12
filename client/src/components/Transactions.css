@@ -14,6 +14,24 @@
   font-size: 0.825rem;
 }
 
+.transaction-list-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.transaction-search-input {
+  width: min(260px, 42vw);
+  min-height: 38px;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
 .transactions-refresh-button {
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
@@ -135,11 +153,26 @@
 }
 
 @media (max-width: 700px) {
-  .transactions-table {
+  .saved-transactions-section .transactions-table {
     min-width: 760px;
   }
 
   .transaction-edit-form {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .saved-transactions-section .section-header {
+    align-items: flex-start;
+    gap: 0.75rem;
+    flex-direction: column;
+  }
+
+  .transaction-list-controls {
+    width: 100%;
+  }
+
+  .transaction-search-input {
+    width: 100%;
+    flex: 1;
   }
 }
