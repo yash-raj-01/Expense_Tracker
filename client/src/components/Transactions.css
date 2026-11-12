@@ -14,6 +14,36 @@
   font-size: 0.825rem;
 }
 
+.transaction-list-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.transaction-search-input {
+  width: min(260px, 42vw);
+  min-height: 38px;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.transaction-category-filter {
+  min-height: 38px;
+  max-width: 180px;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
 .transactions-refresh-button {
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
@@ -57,6 +87,20 @@
 
 .transaction-action-cell {
   text-align: right;
+  white-space: nowrap;
+}
+
+.transaction-edit-button,
+.transaction-edit-actions button {
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--text-main);
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-right: 0.4rem;
 }
 
 .transaction-delete-button {
@@ -75,8 +119,76 @@
   opacity: 0.6;
 }
 
+.transaction-edit-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: 0.9rem;
+  padding: 0.25rem 0;
+}
+
+.transaction-edit-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.transaction-edit-form input,
+.transaction-edit-form select {
+  min-width: 0;
+  min-height: 38px;
+  padding: 0.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--text-main);
+  font: inherit;
+  font-weight: 400;
+}
+
+.transaction-edit-actions {
+  display: flex;
+  align-items: end;
+  gap: 0.5rem;
+  grid-column: 1 / -1;
+}
+
+.transaction-edit-actions button {
+  min-height: 38px;
+}
+
+.transaction-edit-actions .transaction-edit-save {
+  background: var(--primary-accent);
+  color: #ffffff;
+}
+
 @media (max-width: 700px) {
-  .transactions-table {
+  .saved-transactions-section .transactions-table {
     min-width: 760px;
+  }
+
+  .transaction-edit-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .saved-transactions-section .section-header {
+    align-items: flex-start;
+    gap: 0.75rem;
+    flex-direction: column;
+  }
+
+  .transaction-list-controls {
+    width: 100%;
+  }
+
+  .transaction-search-input {
+    width: 100%;
+    flex: 1;
+  }
+
+  .transaction-category-filter {
+    max-width: none;
   }
 }

@@ -29,9 +29,15 @@ async function request(path, options = {}) {
   return payload;
 }
 
-export function getExpenses({ limit = 50, offset = 0 } = {}) {
+export function getExpenses({ limit = 50, offset = 0, search = '', category = '' } = {}) {
   const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (search.trim()) query.set('search', search.trim());
+  if (category) query.set('category', category);
   return request(`/expenses?${query}`);
+}
+
+export function getExpenseCategories() {
+  return request('/expenses/categories');
 }
 
 export function createExpense(expense) {
