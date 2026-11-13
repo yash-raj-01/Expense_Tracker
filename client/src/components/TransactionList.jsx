@@ -17,6 +17,7 @@ function TransactionList({ refreshKey }) {
   const [categories, setCategories] = useState([]);
   const [deletingId, setDeletingId] = useState(null);
   const [actionError, setActionError] = useState('');
+  const [actionSuccess, setActionSuccess] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -69,9 +70,14 @@ function TransactionList({ refreshKey }) {
 
     setDeletingId(transaction.id);
     setActionError('');
+    setActionSuccess('');
+
     try {
       await deleteExpense(transaction.id);
+      // Remove the item from UI immediately after successful deletion
       setTransactions((current) => current.filter((item) => item.id !== transaction.id));
+      setActionSuccess(`"${transaction.title}" was deleted successfully.`);
+      // Refresh category list and synchronization
       setRetryKey((key) => key + 1);
     } catch (requestError) {
       setActionError(requestError.message);
@@ -90,6 +96,7 @@ function TransactionList({ refreshKey }) {
       date: new Date(transaction.date).toISOString().slice(0, 10),
     });
     setActionError('');
+    setActionSuccess('');
   };
 
   const updateEditField = (event) => {
@@ -112,6 +119,8 @@ function TransactionList({ refreshKey }) {
 
     setIsSavingEdit(true);
     setActionError('');
+    setActionSuccess('');
+
     try {
       await updateExpense(transactionId, {
         title: editForm.title.trim(),
@@ -120,6 +129,7 @@ function TransactionList({ refreshKey }) {
         amount: Math.round(amountInRupees * 100),
         date: editForm.date,
       });
+      setActionSuccess('Transaction updated successfully.');
       setRetryKey((key) => key + 1);
       setEditingId(null);
       setEditForm(null);
@@ -142,7 +152,11 @@ function TransactionList({ refreshKey }) {
             className="transaction-search-input"
             type="search"
             value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
+            onChange={(event) => {
+              setSearchInput(event.target.value);
+              setActionSuccess('');
+              setActionError('');
+            }}
             placeholder="Search transactions"
             aria-label="Search transactions by description or category"
             maxLength={100}
@@ -150,7 +164,11 @@ function TransactionList({ refreshKey }) {
           <select
             className="transaction-category-filter"
             value={categoryFilter}
-            onChange={(event) => setCategoryFilter(event.target.value)}
+            onChange={(event) => {
+              setCategoryFilter(event.target.value);
+              setActionSuccess('');
+              setActionError('');
+            }}
             aria-label="Filter transactions by category"
           >
             <option value="">All categories</option>
@@ -161,7 +179,11 @@ function TransactionList({ refreshKey }) {
           <button
             className="transactions-refresh-button"
             type="button"
-            onClick={() => setRetryKey((key) => key + 1)}
+            onClick={() => {
+              setActionSuccess('');
+              setActionError('');
+              setRetryKey((key) => key + 1);
+            }}
             disabled={isLoading}
           >
             {isLoading ? 'Loading…' : 'Refresh'}
@@ -170,6 +192,11 @@ function TransactionList({ refreshKey }) {
       </div>
 
       <div className="transactions-card">
+        {actionSuccess && (
+          <p className="transactions-action-success" role="status">
+            {actionSuccess}
+          </p>
+        )}
         {actionError && (
           <p className="transactions-action-error" role="alert">
             {actionError}

@@ -50,12 +50,17 @@ const getExpenses = async (req, res) => {
     }
     const where = filters.length ? { AND: filters } : undefined;
 
-    const expenses = await prisma.expense.findMany({
-      where,
+    const query = {
       orderBy: [{ date: 'desc' }, { id: 'desc' }],
       skip: offset,
       take: limit + 1,
-    });
+    };
+    if (where) {
+      query.where = where;
+    }
+
+    const expenses = await prisma.expense.findMany(query);
+
     const hasMore = expenses.length > limit;
     if (hasMore) expenses.pop();
 
@@ -70,6 +75,7 @@ const getExpenses = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('Error fetching expenses:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch expenses',
@@ -91,6 +97,7 @@ const getExpenseCategories = async (req, res) => {
       data: records.map((record) => record.category),
     });
   } catch (error) {
+    console.error('Error fetching categories:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to retrieve expense categories',
@@ -169,6 +176,7 @@ const createExpense = async (req, res) => {
       data: newExpense,
     });
   } catch (error) {
+    console.error('Error creating expense:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to create expense',
@@ -182,6 +190,7 @@ const deleteExpense = async (req, res) => {
     const { id } = req.params;
     const expenseId = parseInt(id, 10);
 
+    // Validate ID is a positive integer
     if (isNaN(expenseId) || !Number.isInteger(Number(id)) || expenseId <= 0) {
       return res.status(400).json({
         success: false,
@@ -189,6 +198,7 @@ const deleteExpense = async (req, res) => {
       });
     }
 
+    // Check if the expense exists in PostgreSQL
     const existingExpense = await prisma.expense.findUnique({
       where: { id: expenseId },
     });
@@ -200,6 +210,7 @@ const deleteExpense = async (req, res) => {
       });
     }
 
+    // Delete the record through Prisma
     await prisma.expense.delete({
       where: { id: expenseId },
     });
@@ -210,6 +221,7 @@ const deleteExpense = async (req, res) => {
       data: existingExpense,
     });
   } catch (error) {
+    console.error('Error deleting expense:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to delete expense',
@@ -315,6 +327,7 @@ const updateExpense = async (req, res) => {
       data: updatedExpense,
     });
   } catch (error) {
+    console.error('Error updating expense:', error);
     return res.status(500).json({
       success: false,
       message: 'Failed to update expense',
