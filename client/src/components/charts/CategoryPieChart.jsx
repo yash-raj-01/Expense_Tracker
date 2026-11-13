@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatCurrencyAmount } from '../../utils/preferences';
 
 const PALETTE = [
   '#3b82f6', // blue
@@ -101,7 +102,7 @@ function CategoryPieChart({ data = [], totalExpensesRupees = 0 }) {
                 {activeSlice.category}
               </span>
               <strong className="donut-center-value">
-                Rs. {activeSlice.amountRupees.toFixed(2)}
+                {formatCurrencyAmount(activeSlice.amountRupees)}
               </strong>
               <span className="donut-center-sub">{activeSlice.percentage}%</span>
             </>
@@ -109,7 +110,7 @@ function CategoryPieChart({ data = [], totalExpensesRupees = 0 }) {
             <>
               <span className="donut-center-label">Total Spend</span>
               <strong className="donut-center-value">
-                Rs. {Number(totalExpensesRupees).toFixed(2)}
+                {formatCurrencyAmount(totalExpensesRupees)}
               </strong>
               <span className="donut-center-sub">{data.length} Categories</span>
             </>
@@ -134,7 +135,7 @@ function CategoryPieChart({ data = [], totalExpensesRupees = 0 }) {
                 <span className="legend-count">{slice.count} txns</span>
               </div>
               <div className="legend-metrics">
-                <span className="legend-amount">Rs. {slice.amountRupees.toFixed(2)}</span>
+                <span className="legend-amount">{formatCurrencyAmount(slice.amountRupees)}</span>
                 <span className="legend-percentage">{slice.percentage}%</span>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createExpense } from '../api/expenses';
+import { formatDatePreference, getCurrencySymbol, getDefaultTransactionType } from '../utils/preferences';
 import './ExpenseForm.css';
 
 function getToday() {
@@ -12,7 +13,7 @@ function getToday() {
 
 const initialForm = () => ({
   title: '',
-  type: 'EXPENSE',
+  type: getDefaultTransactionType(),
   category: '',
   amount: '',
   date: getToday(),
@@ -22,6 +23,7 @@ function ExpenseForm({ onCreated }) {
   const [form, setForm] = useState(initialForm);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const currencySymbol = getCurrencySymbol();
 
   const updateField = (event) => {
     const { name, value } = event.target;
@@ -67,7 +69,7 @@ function ExpenseForm({ onCreated }) {
           <p className="page-subtitle">Record an income or expense in your ledger.</p>
         </div>
         <div className="header-date">
-          {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+          {formatDatePreference(new Date())}
         </div>
       </header>
 
@@ -108,7 +110,7 @@ function ExpenseForm({ onCreated }) {
           </label>
 
           <label className="expense-field">
-            <span>Amount (₹)</span>
+            <span>Amount ({currencySymbol})</span>
             <input
               name="amount"
               type="number"
@@ -129,7 +131,7 @@ function ExpenseForm({ onCreated }) {
         </div>
 
         <div className="expense-form-footer">
-          <p className="expense-form-hint">Amounts are entered in rupees and saved to the nearest paise.</p>
+          <p className="expense-form-hint">Amounts are entered in {currencySymbol} and saved in minor units.</p>
           {feedback && (
             <p className={`expense-form-feedback ${feedback.type}`} role="status">
               {feedback.message}

@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { deleteExpense, getExpenseCategories, getExpenses, updateExpense } from '../api/expenses';
-
-const currencyFormatter = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-});
+import { formatDatePreference, formatMinorAmount, getCurrencySymbol } from '../utils/preferences';
 
 function TransactionList({ refreshKey }) {
   const [transactions, setTransactions] = useState([]);
@@ -314,15 +310,9 @@ disabled={isLoading || isLoadingMore}
                         <span className="tx-badge">{isIncome ? 'Income' : 'Expense'}</span>
                       </td>
                       <td>{transaction.category}</td>
-                      <td className="tx-date">
-                        {new Date(transaction.date).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </td>
+                      <td className="tx-date">{formatDatePreference(transaction.date)}</td>
                       <td className={`tx-amount text-right ${isIncome ? 'income' : 'expense'}`}>
-                        {isIncome ? '+' : '−'}{currencyFormatter.format(transaction.amount / 100)}
+                        {isIncome ? '+' : '−'}{formatMinorAmount(transaction.amount)}
                       </td>
                       <td className="transaction-action-cell">
                         <button
@@ -364,7 +354,7 @@ disabled={isLoading || isLoadingMore}
                               <input name="category" value={editForm.category} onChange={updateEditField} maxLength={60} required />
                             </label>
                             <label>
-                              Amount (₹)
+                              Amount ({getCurrencySymbol()})
                               <input name="amount" type="number" min="0.01" step="0.01" value={editForm.amount} onChange={updateEditField} required />
                             </label>
                             <label>

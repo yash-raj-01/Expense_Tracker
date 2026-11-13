@@ -9,6 +9,7 @@ import {
 import CategoryPieChart from './charts/CategoryPieChart';
 import MonthlyBarChart from './charts/MonthlyBarChart';
 import ExpenseReports from './ExpenseReports';
+import { formatCurrencyAmount } from '../utils/preferences';
 
 function Analytics() {
   const [summary, setSummary] = useState(null);
@@ -192,7 +193,7 @@ function Analytics() {
                 <span className="card-pill">All-Time</span>
               </div>
               <h2 className="card-value text-expense">
-                Rs. {(summary?.totalExpensesRupees || 0).toFixed(2)}
+                {formatCurrencyAmount(summary?.totalExpensesRupees || 0)}
               </h2>
               <span className="card-subtext">
                 {summary?.totalTransactions || 0} total transactions
@@ -206,7 +207,7 @@ function Analytics() {
                 <span className="card-pill highlight">{summary?.currentMonth || 'Current'}</span>
               </div>
               <h2 className="card-value">
-                Rs. {(summary?.monthlyExpensesRupees || 0).toFixed(2)}
+                {formatCurrencyAmount(summary?.monthlyExpensesRupees || 0)}
               </h2>
               <span className="card-subtext">This calendar month</span>
             </div>
@@ -218,7 +219,7 @@ function Analytics() {
                 <span className="card-pill">Average</span>
               </div>
               <h2 className="card-value">
-                Rs. {(summary?.averageMonthlySpendingRupees || 0).toFixed(2)}
+                {formatCurrencyAmount(summary?.averageMonthlySpendingRupees || 0)}
               </h2>
               <span className="card-subtext">Based on active months</span>
             </div>
@@ -247,7 +248,7 @@ function Analytics() {
                     {summary.highestSpendingCategory.category}
                   </h2>
                   <span className="card-subtext">
-                    Rs. {summary.highestSpendingCategory.amountRupees.toFixed(2)} ({summary.highestSpendingCategory.percentage}%)
+                    {formatCurrencyAmount(summary.highestSpendingCategory.amountRupees)} ({summary.highestSpendingCategory.percentage}%)
                   </span>
                 </>
               ) : (
