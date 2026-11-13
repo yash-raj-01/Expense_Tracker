@@ -8,6 +8,7 @@ const getExpenses = async (req, res) => {
     const offset = Number(rawOffset);
     const search = req.query.search ?? '';
     const category = req.query.category ?? '';
+    const type = req.query.type ?? '';
     const startDate = req.query.startDate ?? '';
     const endDate = req.query.endDate ?? '';
 
@@ -39,6 +40,13 @@ const getExpenses = async (req, res) => {
       });
     }
 
+    if (typeof type !== 'string' || (type && !['EXPENSE', 'INCOME'].includes(type))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Type filter must be EXPENSE or INCOME',
+      });
+    }
+
     const parseDateFilter = (value, endOfDay = false) => {
       if (!value) return null;
       if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -64,6 +72,7 @@ const getExpenses = async (req, res) => {
     const searchTerm = search.trim();
     const filters = [];
     if (category) filters.push({ category });
+    if (type) filters.push({ type });
     if (searchTerm) {
       filters.push({
         OR: [
