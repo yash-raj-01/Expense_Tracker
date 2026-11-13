@@ -34,12 +34,14 @@ export function getExpenses({
   offset = 0,
   search = '',
   category = '',
+  type = '',
   startDate = '',
   endDate = '',
 } = {}) {
   const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (search.trim()) query.set('search', search.trim());
   if (category) query.set('category', category);
+  if (type) query.set('type', type);
   if (startDate) query.set('startDate', startDate);
   if (endDate) query.set('endDate', endDate);
   return request(`/expenses?${query}`);

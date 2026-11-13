@@ -15,8 +15,11 @@ function TransactionList({ refreshKey }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [categories, setCategories] = useState([]);
+  const [typeFilter, setTypeFilter] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [actionError, setActionError] = useState('');
   const [editingId, setEditingId] = useState(null);
@@ -36,12 +39,19 @@ function TransactionList({ refreshKey }) {
           offset: 0,
           search: searchTerm,
           category: categoryFilter,
+          type: typeFilter,
           startDate,
           endDate,
         });
-        if (isCurrentRequest) setTransactions(response.data || []);
+        if (isCurrentRequest) {
+          setTransactions(response.data || []);
+          setHasMore(Boolean(response.pagination?.hasMore));
+        }
       } catch (requestError) {
-        if (isCurrentRequest) setError(requestError.message);
+        if (isCurrentRequest) {
+          setError(requestError.message);
+          setHasMore(false);
+        }
       } finally {
         if (isCurrentRequest) setIsLoading(false);
       }
@@ -51,7 +61,7 @@ function TransactionList({ refreshKey }) {
     return () => {
       isCurrentRequest = false;
     };
-  }, [refreshKey, retryKey, searchTerm, categoryFilter, startDate, endDate]);
+  }, [refreshKey, retryKey, searchTerm, categoryFilter, typeFilter, startDate, endDate]);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -86,6 +96,28 @@ function TransactionList({ refreshKey }) {
       setActionError(requestError.message);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    setIsLoadingMore(true);
+    setActionError('');
+    try {
+      const response = await getExpenses({
+        limit: 50,
+        offset: transactions.length,
+        search: searchTerm,
+        category: categoryFilter,
+        type: typeFilter,
+        startDate,
+        endDate,
+      });
+      setTransactions((current) => [...current, ...(response.data || [])]);
+      setHasMore(Boolean(response.pagination?.hasMore));
+    } catch (requestError) {
+      setActionError(requestError.message);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -144,7 +176,7 @@ function TransactionList({ refreshKey }) {
       <div className="section-header">
         <div>
           <h2 className="section-title">Saved transactions</h2>
-          <p className="transactions-list-subtitle">Filter by description, category, or date</p>
+          <p className="transactions-list-subtitle">{transactions.length} shown · Filter by description, category, type, or date</p>
         </div>
         <div className="transaction-list-controls">
           <input
@@ -155,17 +187,30 @@ function TransactionList({ refreshKey }) {
             placeholder="Search transactions"
             aria-label="Search transactions by description or category"
             maxLength={100}
+            disabled={isLoadingMore}
           />
           <select
             className="transaction-category-filter"
             value={categoryFilter}
             onChange={(event) => setCategoryFilter(event.target.value)}
             aria-label="Filter transactions by category"
+            disabled={isLoadingMore}
           >
             <option value="">All categories</option>
             {categories.map((category) => (
               <option key={category} value={category}>{category}</option>
             ))}
+          </select>
+          <select
+            className="transaction-category-filter"
+            value={typeFilter}
+            onChange={(event) => setTypeFilter(event.target.value)}
+            aria-label="Filter transactions by type"
+            disabled={isLoadingMore}
+          >
+            <option value="">All types</option>
+            <option value="EXPENSE">Expenses</option>
+            <option value="INCOME">Income</option>
           </select>
           <div className="transaction-date-filters">
             <label>
@@ -175,6 +220,7 @@ function TransactionList({ refreshKey }) {
                 value={startDate}
                 onChange={(event) => setStartDate(event.target.value)}
                 aria-label="Filter transactions from date"
+                disabled={isLoadingMore}
               />
             </label>
             <label>
@@ -184,6 +230,7 @@ function TransactionList({ refreshKey }) {
                 value={endDate}
                 onChange={(event) => setEndDate(event.target.value)}
                 aria-label="Filter transactions to date"
+                disabled={isLoadingMore}
               />
             </label>
           </div>
@@ -191,7 +238,7 @@ function TransactionList({ refreshKey }) {
             className="transactions-refresh-button"
             type="button"
             onClick={() => setRetryKey((key) => key + 1)}
-            disabled={isLoading}
+            disabled={isLoading || isLoadingMore}
           >
             {isLoading ? 'Loading…' : 'Refresh'}
           </button>
@@ -212,7 +259,7 @@ function TransactionList({ refreshKey }) {
           </div>
         ) : transactions.length === 0 ? (
           <p className="transactions-state">
-            {searchTerm || categoryFilter || startDate || endDate
+            {searchTerm || categoryFilter || typeFilter || startDate || endDate
               ? 'No transactions match the selected filters.'
               : 'No transactions yet. Add one using the form above.'}
           </p>
@@ -255,7 +302,7 @@ function TransactionList({ refreshKey }) {
                           className="transaction-edit-button"
                           type="button"
                           onClick={() => startEditing(transaction)}
-                          disabled={deletingId !== null || isSavingEdit}
+                          disabled={deletingId !== null || isSavingEdit || isLoadingMore}
                         >
                           Edit
                         </button>
@@ -263,7 +310,7 @@ function TransactionList({ refreshKey }) {
                           className="transaction-delete-button"
                           type="button"
                           onClick={() => handleDelete(transaction)}
-                          disabled={deletingId !== null || isSavingEdit}
+                          disabled={deletingId !== null || isSavingEdit || isLoadingMore}
                           aria-label={`Delete ${transaction.title}`}
                         >
                           {deletingId === transaction.id ? 'Deleting…' : 'Delete'}
@@ -314,6 +361,18 @@ function TransactionList({ refreshKey }) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+        {!isLoading && !error && hasMore && (
+          <div className="transactions-load-more-wrap">
+            <button
+              className="transactions-load-more-button"
+              type="button"
+              onClick={handleLoadMore}
+              disabled={isLoadingMore || editingId !== null || deletingId !== null || isSavingEdit}
+            >
+              {isLoadingMore ? 'Loading…' : 'Load more'}
+            </button>
           </div>
         )}
       </div>
