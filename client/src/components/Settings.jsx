@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { getExpenses } from '../api/expenses';
 import './Settings.css';
+
+// Helper function to escape CSV fields according to RFC 4180
+function escapeCsvField(val) {
+  if (val === null || val === undefined) return '';
+  const stringVal = String(val);
+  if (/[",\n\r]/.test(stringVal)) {
+    return `"${stringVal.replace(/"/g, '""')}"`;
+  }
+  return stringVal;
+}
 
 function Settings({ onProfileUpdate }) {
   // 1. Profile State
@@ -13,6 +24,9 @@ function Settings({ onProfileUpdate }) {
   const [currency, setCurrency] = useState('INR');
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
   const [defaultType, setDefaultType] = useState('EXPENSE');
+
+  // 4. Data Management State
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
 
   // Feedback state for user confirmation messages
   const [feedback, setFeedback] = useState(null);
@@ -34,10 +48,10 @@ function Settings({ onProfileUpdate }) {
     setDefaultType(savedDefaultType);
   }, []);
 
-  // Show a temporary feedback message
+  // Show a temporary feedback banner
   const showFeedback = (message, type = 'success') => {
     setFeedback({ message, type });
-    setTimeout(() => setFeedback(null), 3000);
+    setTimeout(() => setFeedback(null), 3500);
   };
 
   // Handle Profile Save
@@ -78,12 +92,74 @@ function Settings({ onProfileUpdate }) {
     showFeedback('Preferences updated successfully.');
   };
 
+  // Handle CSV Export
+  const handleExportCsv = async () => {
+    setIsExportingCsv(true);
+
+    try {
+      // Fetch all transactions in batches (backend limit is 100 per request)
+      let allTransactions = [];
+      let offset = 0;
+      const batchLimit = 100;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await getExpenses({ limit: batchLimit, offset });
+        const batch = response.data || [];
+        allTransactions = allTransactions.concat(batch);
+        hasMore = Boolean(response.pagination?.hasMore && batch.length === batchLimit);
+        offset += batchLimit;
+      }
+
+      if (allTransactions.length === 0) {
+        showFeedback('No transactions found to export.', 'error');
+        return;
+      }
+
+      // Build CSV Headers
+      const headers = ['Date', 'Description', 'Type', 'Category', `Amount (${currency})`];
+
+      // Format Rows
+      const rows = allTransactions.map((tx) => {
+        const txDate = tx.date ? new Date(tx.date).toISOString().slice(0, 10) : '';
+        const txAmount = (Number(tx.amount) / 100).toFixed(2);
+        return [
+          escapeCsvField(txDate),
+          escapeCsvField(tx.title),
+          escapeCsvField(tx.type || 'EXPENSE'),
+          escapeCsvField(tx.category),
+          escapeCsvField(txAmount),
+        ];
+      });
+
+      const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\r\n');
+
+      // Create download blob
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const today = new Date().toISOString().slice(0, 10);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `ledger_transactions_${today}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showFeedback(`Exported ${allTransactions.length} transactions to CSV.`);
+    } catch (err) {
+      showFeedback(err.message || 'Failed to export CSV.', 'error');
+    } finally {
+      setIsExportingCsv(false);
+    }
+  };
+
   return (
     <div className="settings-view">
       <header className="content-header">
         <div>
           <h1 className="page-title">Settings</h1>
-          <p className="page-subtitle">Manage your personal profile, appearance, and application preferences.</p>
+          <p className="page-subtitle">Manage your personal profile, appearance, preferences, and ledger data.</p>
         </div>
       </header>
 
@@ -232,10 +308,36 @@ function Settings({ onProfileUpdate }) {
             </div>
           </form>
         </section>
+
+        {/* Section D: Data Management */}
+        <section className="settings-card">
+          <div className="settings-card-header">
+            <h2 className="settings-card-title">Data Management</h2>
+            <p className="settings-card-description">Export your recorded transactions to external files.</p>
+          </div>
+
+          <div className="data-management-list">
+            <div className="data-action-item">
+              <div className="data-action-info">
+                <span className="data-action-title">Export Transactions as CSV</span>
+                <p className="data-action-description">
+                  Download all expenses and incomes in a spreadsheet-friendly CSV format compatible with Excel and Google Sheets.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="settings-secondary-button"
+                onClick={handleExportCsv}
+                disabled={isExportingCsv}
+              >
+                {isExportingCsv ? 'Exporting CSV…' : 'Export CSV'}
+              </button>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
 }
 
 export default Settings;
-

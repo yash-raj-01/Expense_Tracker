@@ -214,3 +214,69 @@
   }
 }
 
+
+
+/* Data Management Section */
+.data-management-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.data-action-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.5rem 0;
+}
+
+.data-action-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.data-action-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.data-action-description {
+  font-size: 0.825rem;
+  color: var(--text-muted);
+  max-width: 580px;
+  line-height: 1.4;
+}
+
+.settings-secondary-button {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+  padding: 0.55rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.settings-secondary-button:hover:not(:disabled) {
+  border-color: var(--text-muted);
+  background-color: var(--badge-bg);
+}
+
+.settings-secondary-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 650px) {
+  .data-action-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
