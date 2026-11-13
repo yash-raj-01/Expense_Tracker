@@ -15,6 +15,8 @@ function TransactionList({ refreshKey }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [categories, setCategories] = useState([]);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [deletingId, setDeletingId] = useState(null);
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
@@ -30,7 +32,14 @@ function TransactionList({ refreshKey }) {
       setError('');
 
       try {
-        const response = await getExpenses({ limit: 50, offset: 0, search: searchTerm, category: categoryFilter });
+        const response = await getExpenses({
+          limit: 50,
+          offset: 0,
+          search: searchTerm,
+          category: categoryFilter,
+          startDate,
+          endDate,
+        });
         if (isCurrentRequest) setTransactions(response.data || []);
       } catch (requestError) {
         if (isCurrentRequest) setError(requestError.message);
@@ -43,7 +52,7 @@ function TransactionList({ refreshKey }) {
     return () => {
       isCurrentRequest = false;
     };
-  }, [refreshKey, retryKey, searchTerm, categoryFilter]);
+  }, [refreshKey, retryKey, searchTerm, categoryFilter, startDate, endDate]);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -145,7 +154,7 @@ function TransactionList({ refreshKey }) {
       <div className="section-header">
         <div>
           <h2 className="section-title">Saved transactions</h2>
-          <p className="transactions-list-subtitle">Search descriptions and categories</p>
+          <p className="transactions-list-subtitle">Filter by description, category, or date</p>
         </div>
         <div className="transaction-list-controls">
           <input
@@ -176,6 +185,26 @@ function TransactionList({ refreshKey }) {
               <option key={category} value={category}>{category}</option>
             ))}
           </select>
+          <div className="transaction-date-filters">
+            <label>
+              From
+              <input
+                type="date"
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+                aria-label="Filter transactions from date"
+              />
+            </label>
+            <label>
+              To
+              <input
+                type="date"
+                value={endDate}
+                onChange={(event) => setEndDate(event.target.value)}
+                aria-label="Filter transactions to date"
+              />
+            </label>
+          </div>
           <button
             className="transactions-refresh-button"
             type="button"
@@ -210,7 +239,7 @@ function TransactionList({ refreshKey }) {
           </div>
         ) : transactions.length === 0 ? (
           <p className="transactions-state">
-            {searchTerm || categoryFilter
+            {searchTerm || categoryFilter || startDate || endDate
               ? 'No transactions match the selected filters.'
               : 'No transactions yet. Add one using the form above.'}
           </p>

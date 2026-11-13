@@ -29,10 +29,19 @@ async function request(path, options = {}) {
   return payload;
 }
 
-export function getExpenses({ limit = 50, offset = 0, search = '', category = '' } = {}) {
+export function getExpenses({
+  limit = 50,
+  offset = 0,
+  search = '',
+  category = '',
+  startDate = '',
+  endDate = '',
+} = {}) {
   const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (search.trim()) query.set('search', search.trim());
   if (category) query.set('category', category);
+  if (startDate) query.set('startDate', startDate);
+  if (endDate) query.set('endDate', endDate);
   return request(`/expenses?${query}`);
 }
 

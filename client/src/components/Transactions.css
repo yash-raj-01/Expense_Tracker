@@ -44,6 +44,32 @@
   font-size: 0.85rem;
 }
 
+.transaction-date-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.transaction-date-filters label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.transaction-date-filters input {
+  min-height: 38px;
+  max-width: 145px;
+  padding: 0.4rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.8rem;
+}
+
 .transactions-refresh-button {
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
@@ -190,6 +216,7 @@
 
   .transaction-list-controls {
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .transaction-search-input {
@@ -198,6 +225,18 @@
   }
 
   .transaction-category-filter {
+    width: 100%;
     max-width: none;
+  }
+
+  .transaction-date-filters {
+    width: 100%;
+  }
+
+  .transaction-date-filters label,
+  .transaction-date-filters input {
+    flex: 1;
+    max-width: none;
+    min-width: 0;
   }
 }
