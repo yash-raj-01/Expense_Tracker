@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { getExpenses } from '../api/expenses';
-
-// Standard Indian Rupee currency formatter
-const currencyFormatter = new Intl.NumberFormat('en-IN', {
-  style: 'currency',
-  currency: 'INR',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { fetchAnalyticsSummary } from '../services/api';
+import { formatDatePreference, formatMinorAmount } from '../utils/preferences';
 
 function Dashboard() {
   const [transactions, setTransactions] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -19,8 +14,12 @@ function Dashboard() {
     try {
       setLoading(true);
       setError(null);
-      const response = await getExpenses({ limit: 100, offset: 0 });
-      setTransactions(response.data || []);
+      const [transactionsResponse, summaryResponse] = await Promise.all([
+        getExpenses({ limit: 10, offset: 0 }),
+        fetchAnalyticsSummary({ timeRange: 'all' }),
+      ]);
+      setTransactions(transactionsResponse.data || []);
+      setSummary(summaryResponse);
     } catch (err) {
       setError(err.message || 'Could not connect to the Ledger server. Check that it is running.');
     } finally {
@@ -32,34 +31,19 @@ function Dashboard() {
     loadTransactions();
   }, []);
 
-  // --- Dynamic calculations derived directly from the transaction list ---
-
-  // 1. Total Expenses: Sum of transactions where type is 'EXPENSE' (or untyped legacy)
-  const totalExpensePaise = transactions
-    .filter((tx) => tx.type === 'EXPENSE' || !tx.type)
-    .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-
-  // 2. Total Income: Sum of transactions where type is 'INCOME'
-  const totalIncomePaise = transactions
-    .filter((tx) => tx.type === 'INCOME')
-    .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-
-  // 3. Balance: Total Income minus Total Expenses
-  const balancePaise = totalIncomePaise - totalExpensePaise;
-
-  // Count of expenses and incomes for subtitle information
-  const expenseCount = transactions.filter((tx) => tx.type === 'EXPENSE' || !tx.type).length;
-  const incomeCount = transactions.filter((tx) => tx.type === 'INCOME').length;
+  const totalExpensePaise = Number(summary?.totalExpenses) || 0;
+  const totalIncomePaise = Number(summary?.totalIncome) || 0;
+  const balancePaise = Number(summary?.netSavings) || 0;
 
   return (
     <div className="dashboard-view">
       <header className="content-header">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Welcome back, Yash. Here is your financial overview.</p>
+          <p className="page-subtitle">Your latest ledger activity and spending summary.</p>
         </div>
         <div className="header-date">
-          {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+          {formatDatePreference(new Date())}
         </div>
       </header>
 
@@ -79,7 +63,7 @@ function Dashboard() {
         <div className="metric-card">
           <span className="card-label">Total Balance</span>
           <h2 className={`card-value ${balancePaise >= 0 ? 'text-income' : 'text-expense'}`}>
-            {loading ? 'Loading…' : currencyFormatter.format(balancePaise / 100)}
+            {loading ? 'Loading…' : formatMinorAmount(balancePaise)}
           </h2>
           <span className="card-subtext">Net savings to date</span>
         </div>
@@ -88,22 +72,18 @@ function Dashboard() {
         <div className="metric-card">
           <span className="card-label">Total Income</span>
           <h2 className="card-value text-income">
-            {loading ? 'Loading…' : currencyFormatter.format(totalIncomePaise / 100)}
+            {loading ? 'Loading…' : formatMinorAmount(totalIncomePaise)}
           </h2>
-          <span className="card-subtext">
-            {incomeCount} {incomeCount === 1 ? 'income transaction' : 'income transactions'}
-          </span>
+          <span className="card-subtext">Income recorded to date</span>
         </div>
 
         {/* Total Expenses Card */}
         <div className="metric-card">
           <span className="card-label">Total Expenses</span>
           <h2 className="card-value text-expense">
-            {loading ? 'Loading…' : currencyFormatter.format(totalExpensePaise / 100)}
+            {loading ? 'Loading…' : formatMinorAmount(totalExpensePaise)}
           </h2>
-          <span className="card-subtext">
-            {expenseCount} {expenseCount === 1 ? 'expense recorded' : 'expenses recorded'}
-          </span>
+          <span className="card-subtext">Expenses recorded to date</span>
         </div>
       </section>
 
@@ -123,7 +103,7 @@ function Dashboard() {
 
         <div className="transactions-card">
           {loading ? (
-            <div className="loading-state">Loading transactions from database…</div>
+            <div className="loading-state">Loading recent transactions…</div>
           ) : transactions.length === 0 ? (
             <div className="empty-state">
               <p>No transactions found in PostgreSQL.</p>
@@ -153,16 +133,10 @@ function Dashboard() {
                         <td>
                           <span className="tx-badge">{tx.category}</span>
                         </td>
-                        <td className="tx-date">
-                          {new Date(tx.date).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
-                        </td>
+                        <td className="tx-date">{formatDatePreference(tx.date)}</td>
                         <td className={`tx-amount text-right ${isIncome ? 'income' : 'expense'}`}>
                           {isIncome ? '+' : '−'}
-                          {currencyFormatter.format(tx.amount / 100)}
+                          {formatMinorAmount(tx.amount)}
                         </td>
                       </tr>
                     );

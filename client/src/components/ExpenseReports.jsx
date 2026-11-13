@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatCurrencyAmount, formatDatePreference } from '../utils/preferences';
 
 function ExpenseReports({
   reportsData,
@@ -124,16 +125,12 @@ function ExpenseReports({
               <div className="highest-expense-content">
                 <h3 className="highest-title">{highestExpense.title}</h3>
                 <div className="highest-amount text-expense">
-                  Rs. {highestExpense.amountRupees.toFixed(2)}
+                  {formatCurrencyAmount(highestExpense.amountRupees)}
                 </div>
                 <div className="highest-meta">
                   <span className="tx-badge">{highestExpense.category}</span>
                   <span className="highest-date">
-                    {new Date(highestExpense.date).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
+                    {formatDatePreference(highestExpense.date)}
                   </span>
                 </div>
                 {totalExpensesRupees > 0 && (
@@ -165,14 +162,11 @@ function ExpenseReports({
                       <span className="top-title">{exp.title}</span>
                       <span className="top-category-date">
                         {exp.category} •{' '}
-                        {new Date(exp.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                        {formatDatePreference(exp.date)}
                       </span>
                     </div>
                     <span className="top-amount text-expense">
-                      Rs. {exp.amountRupees.toFixed(2)}
+                      {formatCurrencyAmount(exp.amountRupees)}
                     </span>
                   </li>
                 ))}
@@ -216,7 +210,7 @@ function ExpenseReports({
                     </td>
                     <td className="tx-date">{cat.count}</td>
                     <td className="tx-amount text-right expense">
-                      Rs. {cat.amountRupees.toFixed(2)}
+                      {formatCurrencyAmount(cat.amountRupees)}
                     </td>
                   </tr>
                 ))}
@@ -252,9 +246,9 @@ function ExpenseReports({
                       <td>
                         <span className="tx-badge">{m.count} entries</span>
                       </td>
-                      <td className="tx-date">Rs. {avgPerTx}</td>
+                      <td className="tx-date">{formatCurrencyAmount(avgPerTx)}</td>
                       <td className="tx-amount text-right expense">
-                        Rs. {m.amountRupees.toFixed(2)}
+                        {formatCurrencyAmount(m.amountRupees)}
                       </td>
                     </tr>
                   );
@@ -290,14 +284,10 @@ function ExpenseReports({
                       <span className="tx-badge">{tx.category}</span>
                     </td>
                     <td className="tx-date">
-                      {new Date(tx.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      {formatDatePreference(tx.date)}
                     </td>
                     <td className="tx-amount text-right expense">
-                      -Rs. {tx.amountRupees.toFixed(2)}
+                      −{formatCurrencyAmount(tx.amountRupees)}
                     </td>
                   </tr>
                 ))}

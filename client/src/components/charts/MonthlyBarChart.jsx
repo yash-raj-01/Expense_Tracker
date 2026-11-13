@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatCurrencyAmount } from '../../utils/preferences';
 
 function MonthlyBarChart({ data = [], summary = {} }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
@@ -42,11 +43,11 @@ function MonthlyBarChart({ data = [], summary = {} }) {
       <div className="chart-meta-bar">
         <div className="meta-stat">
           <span className="meta-label">Period Spending</span>
-          <span className="meta-value">Rs. {(summary.totalPeriodSpendingRupees || 0).toFixed(2)}</span>
+          <span className="meta-value">{formatCurrencyAmount(summary.totalPeriodSpendingRupees || 0)}</span>
         </div>
         <div className="meta-stat">
           <span className="meta-label">Monthly Average</span>
-          <span className="meta-value">Rs. {(summary.averageMonthlyRupees || 0).toFixed(2)}</span>
+          <span className="meta-value">{formatCurrencyAmount(summary.averageMonthlyRupees || 0)}</span>
         </div>
         {summary.highestMonth && summary.highestMonth.amountRupees > 0 && (
           <div className="meta-stat">
@@ -79,7 +80,7 @@ function MonthlyBarChart({ data = [], summary = {} }) {
                 textAnchor="end"
                 className="axis-label"
               >
-                Rs.{Math.round(tick.value)}
+                {formatCurrencyAmount(Math.round(tick.value))}
               </text>
             </g>
           ))}
@@ -168,7 +169,7 @@ function MonthlyBarChart({ data = [], summary = {} }) {
                     textAnchor="middle"
                     className="bar-value-tooltip"
                   >
-                    Rs.{item.amountRupees.toFixed(0)}
+                    {formatCurrencyAmount(item.amountRupees)}
                   </text>
                 )}
 
@@ -191,7 +192,7 @@ function MonthlyBarChart({ data = [], summary = {} }) {
       {hoveredIndex !== null && data[hoveredIndex] && (
         <div className="chart-focus-banner">
           <span className="focus-month">{data[hoveredIndex].monthLabel}:</span>
-          <span className="focus-amount">Rs. {data[hoveredIndex].amountRupees.toFixed(2)}</span>
+          <span className="focus-amount">{formatCurrencyAmount(data[hoveredIndex].amountRupees)}</span>
           <span className="focus-count">({data[hoveredIndex].count} transactions)</span>
         </div>
       )}
