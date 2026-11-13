@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Sidebar({ currentTab, onSelectTab }) {
+function Sidebar({ currentTab, onSelectTab, profileName = 'Profile' }) {
   const menuItems = [
     {
       id: 'dashboard',
@@ -47,6 +47,10 @@ function Sidebar({ currentTab, onSelectTab }) {
     },
   ];
 
+  const initial = profileName && profileName.trim().length > 0 
+    ? profileName.trim().charAt(0).toUpperCase() 
+    : 'P';
+
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -68,9 +72,9 @@ function Sidebar({ currentTab, onSelectTab }) {
       </nav>
 
       <div className="sidebar-footer">
-        <div className="user-avatar">P</div>
+        <div className="user-avatar">{initial}</div>
         <div className="user-info">
-          <p className="user-name">Profile</p>
+          <p className="user-name">{profileName || 'Profile'}</p>
           <p className="user-role">Personal</p>
         </div>
       </div>
@@ -79,4 +83,3 @@ function Sidebar({ currentTab, onSelectTab }) {
 }
 
 export default Sidebar;
-
