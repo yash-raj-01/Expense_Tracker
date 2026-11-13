@@ -8,6 +8,8 @@ const getExpenses = async (req, res) => {
     const offset = Number(rawOffset);
     const search = req.query.search ?? '';
     const category = req.query.category ?? '';
+    const startDate = req.query.startDate ?? '';
+    const endDate = req.query.endDate ?? '';
 
     if (!/^\d+$/.test(String(rawLimit)) || !Number.isInteger(limit) || limit < 1 || limit > 100) {
       return res.status(400).json({
@@ -37,6 +39,28 @@ const getExpenses = async (req, res) => {
       });
     }
 
+    const parseDateFilter = (value, endOfDay = false) => {
+      if (!value) return null;
+      if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+      const time = endOfDay ? 'T23:59:59.999Z' : 'T00:00:00.000Z';
+      const parsed = new Date(`${value}${time}`);
+      return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value ? null : parsed;
+    };
+
+    if ((startDate && !parseDateFilter(startDate)) || (endDate && !parseDateFilter(endDate, true))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Dates must be valid calendar dates in YYYY-MM-DD format',
+      });
+    }
+
+    if (startDate && endDate && startDate > endDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Start date cannot be after end date',
+      });
+    }
+
     const searchTerm = search.trim();
     const filters = [];
     if (category) filters.push({ category });
@@ -46,6 +70,14 @@ const getExpenses = async (req, res) => {
           { title: { contains: searchTerm, mode: 'insensitive' } },
           { category: { contains: searchTerm, mode: 'insensitive' } },
         ],
+      });
+    }
+    if (startDate || endDate) {
+      filters.push({
+        date: {
+          ...(startDate ? { gte: parseDateFilter(startDate) } : {}),
+          ...(endDate ? { lte: parseDateFilter(endDate, true) } : {}),
+        },
       });
     }
     const where = filters.length ? { AND: filters } : undefined;
