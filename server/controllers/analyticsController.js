@@ -174,6 +174,8 @@ const getAnalyticsSummary = async (req, res) => {
         averageMonthlySpending,
         averageMonthlySpendingRupees: toRupees(averageMonthlySpending),
         totalTransactions,
+        averageTransactionAmount: totalTransactions > 0 ? Math.round(totalExpenses / totalTransactions) : 0,
+        averageTransactionAmountRupees: totalTransactions > 0 ? toRupees(Math.round(totalExpenses / totalTransactions)) : 0,
         highestSpendingCategory,
         totalIncome,
         totalIncomeRupees: toRupees(totalIncome),

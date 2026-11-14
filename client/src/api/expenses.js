@@ -70,3 +70,40 @@ export function deleteExpense(id) {
     method: 'DELETE',
   });
 }
+
+// Analytics endpoints
+export function getAnalyticsSummary(params = {}) {
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== '') query.set(k, v);
+  }
+  const qs = query.toString();
+  return request(`/analytics/summary${qs ? `?${qs}` : ''}`);
+}
+
+export function getCategoryAnalytics(params = {}) {
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== '') query.set(k, v);
+  }
+  const qs = query.toString();
+  return request(`/analytics/categories${qs ? `?${qs}` : ''}`);
+}
+
+export function getMonthlyAnalytics(params = {}) {
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== '') query.set(k, v);
+  }
+  const qs = query.toString();
+  return request(`/analytics/monthly${qs ? `?${qs}` : ''}`);
+}
+
+export function getAnalyticsReports(params = {}) {
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== '') query.set(k, v);
+  }
+  const qs = query.toString();
+  return request(`/analytics/reports${qs ? `?${qs}` : ''}`);
+}
