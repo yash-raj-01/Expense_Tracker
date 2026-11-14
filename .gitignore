@@ -5,7 +5,9 @@ node_modules/
 # Production builds
 dist/
 build/
+release/
 */dist/
+*/release/
 
 # Environment variables
 .env

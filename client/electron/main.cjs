@@ -1,7 +1,10 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const path = require('path');
+
+let win = null;
 
 function createWindow() {
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 1100,
     height: 750,
     minWidth: 800,
@@ -9,6 +12,7 @@ function createWindow() {
     backgroundColor: '#ffffff',
     title: 'Ledger — Expense Tracker',
     webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -22,11 +26,15 @@ function createWindow() {
   };
 
   const loadWithRetry = () => {
-    tryLoad(primaryUrl).catch(() => {
-      tryLoad(fallbackUrl).catch(() => {
-        setTimeout(loadWithRetry, 400);
+    if (app.isPackaged || process.env.NODE_ENV === 'production') {
+      win.loadFile(path.join(__dirname, '../dist/index.html'));
+    } else {
+      tryLoad(primaryUrl).catch(() => {
+        tryLoad(fallbackUrl).catch(() => {
+          setTimeout(loadWithRetry, 400);
+        });
       });
-    });
+    }
   };
 
   loadWithRetry();
