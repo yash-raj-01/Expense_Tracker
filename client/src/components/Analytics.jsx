@@ -131,6 +131,43 @@ function Analytics() {
     }
   };
 
+  const handleExportAnalyticsCSV = () => {
+    if (!categoryData || categoryData.length === 0) {
+      setError('No analytics data available to export.');
+      return;
+    }
+    const rows = [
+      ['Ledger Expense Tracker - Analytics Report'],
+      [`Generated at: ${new Date().toISOString()}`],
+      [`Filter Timeframe: ${timeRange}`],
+      [],
+      ['Category Breakdown'],
+      ['Category', 'Transactions', 'Amount (Rupees)', 'Share (%)'],
+      ...categoryData.map((c) => [
+        `"${c.category}"`,
+        c.count,
+        c.amountRupees,
+        `${c.percentage}%`,
+      ]),
+      [],
+      ['Monthly Spending Trends'],
+      ['Month', 'Transactions', 'Amount (Rupees)'],
+      ...monthlyData.map((m) => [
+        `"${m.monthLabel}"`,
+        m.count,
+        m.amountRupees,
+      ]),
+    ];
+    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `ledger_analytics_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="analytics-view">
       {/* Top Header */}
@@ -142,6 +179,13 @@ function Analytics() {
           </p>
         </div>
         <div className="header-actions">
+          <button
+            className="action-btn-secondary"
+            onClick={handleExportAnalyticsCSV}
+            title="Export analytics summary to CSV"
+          >
+            <span>↓</span> Export CSV
+          </button>
           <button
             className="action-btn-secondary"
             onClick={() => loadAllAnalytics(true)}
