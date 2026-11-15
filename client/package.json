@@ -9,7 +9,24 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron": "electron .",
-    "start": "vite & electron ."
+    "start": "vite & electron .",
+    "dist": "vite build && electron-builder --mac dmg"
+  },
+  "build": {
+    "appId": "com.ledger.expensetracker",
+    "productName": "Ledger",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.finance"
+    }
   },
   "dependencies": {
     "react": "^18.3.1",
