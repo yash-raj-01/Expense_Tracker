@@ -1,6 +1,9 @@
-const API_BASE_URL =
+const rawBaseUrl =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
   'http://localhost:5001/api';
+
+const cleanBaseUrl = rawBaseUrl.trim().replace(/\/+$/, '');
+const API_BASE_URL = cleanBaseUrl.endsWith('/api') ? cleanBaseUrl : `${cleanBaseUrl}/api`;
 
 const buildQueryString = (params = {}) => {
   const query = new URLSearchParams();
@@ -24,7 +27,7 @@ async function apiRequest(endpoint, options = {}) {
       },
     });
   } catch {
-    throw new Error('Unable to connect to the Ledger server. Check that it is running on port 5001.');
+    throw new Error('Unable to connect to the Ledger server. Please verify the backend is running and CORS is configured.');
   }
 
   let result;
