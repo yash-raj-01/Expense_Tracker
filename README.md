@@ -35,6 +35,7 @@ A modern full-stack personal finance and expense tracking desktop application bu
 ```bash
 cd server
 cp .env.example .env
+npm install dotenv
 # Configure your DATABASE_URL in .env
 npm install
 npx prisma migrate deploy
