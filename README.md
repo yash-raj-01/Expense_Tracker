@@ -24,21 +24,6 @@ A modern full-stack personal finance and expense tracking desktop application bu
 - **Database:** PostgreSQL
 - **Testing:** Native Node.js test runner (`node:test`, `node:assert`)
 
----
-
-## 📚 Academic & Curriculum Topics
-
-### [Mobile Virtual Reality and Artificial Intelligence (SWAYAM / NPTEL)](docs/MOBILE_VIRTUAL_REALITY_AND_AI_SWAYAM.md)
-Comprehensive study syllabus and reference notes on the **SWAYAM** course offered by **IIT Mandi** (Course Code: **CS 662**, Instructor: **Prof. Varun Dutt**):
-- **Module 1:** Virtual Reality Foundations & Unity 3D Environment Setup
-- **Module 2:** AI Simulation & A\* Pathfinding Algorithms
-- **Module 3:** 3D Modeling with Blender & Google Cardboard VR Development
-- **Module 4:** Neural Networks, Imitation Learning & Behavioral Cloning in Games
-- **Module 5:** Deep Reinforcement Learning (PPO), Unity ML-Agents & TensorBoard Analysis
-
-👉 **Full Course Documentation:** [`docs/MOBILE_VIRTUAL_REALITY_AND_AI_SWAYAM.md`](docs/MOBILE_VIRTUAL_REALITY_AND_AI_SWAYAM.md)
-
----
 
 ## 📦 Getting Started
 
@@ -50,6 +35,7 @@ Comprehensive study syllabus and reference notes on the **SWAYAM** course offere
 ```bash
 cd server
 cp .env.example .env
+npm install dotenv
 # Configure your DATABASE_URL in .env
 npm install
 npx prisma migrate deploy
